@@ -38,6 +38,7 @@ const TodoTable: React.FC = () => {
     },
   ]);
 
+  // Function to add a new row to the todo list
   const handleAddRow = () => {
     setTodos([
       ...todos,
@@ -53,18 +54,45 @@ const TodoTable: React.FC = () => {
     ]);
   };
 
+  // Function to handle changes in the todo table cells
   const handleRowChange = <K extends TodoKeys>(index: number, field: K, value: Todo[K]) => {
     const updatedTodos = [...todos];
     updatedTodos[index][field] = value;
     setTodos(updatedTodos);
   };
 
-  const handleSave = () => {
-    // Mock save function: Save data to localStorage (or send to backend)
-    console.log('Saving Todos:', todos);
-    localStorage.setItem('todos', JSON.stringify(todos));
-    alert('Todos saved successfully!');
+  // Function to save todos to backend
+  const handleSave = async () => {
+    try {
+      console.log(JSON.stringify(todos))
+      const response = await fetch('http://localhost:8000/api/todos', {
+        method: 'post',
+        headers: {
+          'content-type': "application/json",
+        },
+        body: JSON.stringify(todos),
+      });
+      // If response is not OK, handle error
+      if (!response.ok) {
+        const errorText = await response.text(); // Read the response as text first
+        throw new Error(errorText); // You can throw the error message returned
+      }
+      // If response is OK, parse it as JSON
+      const contentType = response.headers.get('Content-Type');
+      if (contentType && contentType.includes('application/json')) {
+        const data = await response.json();
+        console.log('Todos saved successfully:', data);
+        alert('Todos saved successfully!');
+      } else {
+        throw new Error('Received invalid response from the server');
+      }
+    } catch (error: any) {
+      console.error('Error:', error.message);
+      alert(`Error: ${error.message}`);
+    }
   };
+  
+  
 
   return (
     <Box
@@ -80,10 +108,7 @@ const TodoTable: React.FC = () => {
         sx={{
           textAlign: 'center',
           padding: 2,
-          marginBottom: 4,
-          borderRadius: '12px',
-          background: 'linear-gradient(135deg, #e0e0e0, #d3d3d3)',
-          boxShadow: '0px 6px 15px rgba(0, 0, 0, 0.2)',
+          marginBottom: 2,
         }}
       >
         <Typography
@@ -161,6 +186,7 @@ const TodoTable: React.FC = () => {
             ))}
             <TableRow>
               <TableCell colSpan={7} sx={{ backgroundColor: "#d5d0c8" }} align="center">
+                {/* Using the combined add/save button component */}
                 <CombinedAddSaveButton 
                   onAddClick={handleAddRow} 
                   onSaveClick={handleSave} 
